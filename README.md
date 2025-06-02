@@ -1,2 +1,3 @@
-# syllabus-generator
-build the sylubus for hhds for 2026
+# מחולל סילבוסים
+
+אפליקציית Streamlit ליצירת סילבוסים מעוצבים לבית הספר הדמוקרטי הוד השרון.
