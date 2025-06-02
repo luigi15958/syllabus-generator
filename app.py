@@ -46,30 +46,37 @@ with st.form("syllabus_form"):
     summary = st.text_area("📚 תקציר הקורס")
     submitted = st.form_submit_button("✏️ צור סילבוס")
 
-# פונקציה לציור טקסטים על גבי תבנית
+# פונקציה לציור טקסטים על גבי תבנית המקורית
 
-def generate_syllabus_image(course_name, teacher, hours_per_week, requirements, summary, equipment):
-    template_path = "syllabus_template.png"
+def generate_syllabus_image(course_name, teacher, hours_per_week, division, domain, requirements_list, summary, equipment_list):
+    template_path = "syllabus_template_clean.png"
     image = Image.open(template_path).convert("RGBA")
     draw = ImageDraw.Draw(image)
 
     font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    font_medium = ImageFont.truetype(font_path, 30)
     font_small = ImageFont.truetype(font_path, 26)
-    font_medium = ImageFont.truetype(font_path, 32)
 
-    draw.text((540, 240), course_name, font=font_medium, fill="black", anchor="ra")
-    draw.text((540, 285), teacher, font=font_medium, fill="black", anchor="ra")
-    draw.text((540, 330), hours_per_week, font=font_medium, fill="black", anchor="ra")
+    # כותרת ראשית
+    draw.text((640, 145), course_name, font=font_medium, fill="black", anchor="mm")
+    # פרטים טכניים בצד ימין
+    draw.text((1050, 280), teacher, font=font_small, fill="black", anchor="ra")
+    draw.text((1050, 330), hours_per_week, font=font_small, fill="black", anchor="ra")
+    draw.text((1050, 380), division, font=font_small, fill="black", anchor="ra")
+    draw.text((1050, 430), domain, font=font_small, fill="black", anchor="ra")
 
-    y = 440
-    for i, req in enumerate(requirements.splitlines()):
-        draw.text((535, y + i * 50), req.strip(), font=font_small, fill="black", anchor="ra")
+    # דרישות הקורס - מיושרות שמאלה ברשימה ממוספרת
+    req_start_y = 540
+    for i, line in enumerate(requirements_list):
+        draw.text((410, req_start_y + i * 35), f"{i+1}. {line}", font=font_small, fill="black", anchor="la")
 
-    draw.multiline_text((245, 590), summary, font=font_small, fill="black", anchor="la", spacing=6)
+    # תקציר הקורס
+    draw.multiline_text((100, 690), summary, font=font_small, fill="black", spacing=5, align="right")
 
-    y = 885
-    for i, item in enumerate(equipment.splitlines()):
-        draw.text((260, y + i * 45), item.strip(), font=font_small, fill="black", anchor="la")
+    # ציוד נדרש - רשימת תבליטים
+    equip_start_y = 900
+    for i, line in enumerate(equipment_list):
+        draw.text((100, equip_start_y + i * 30), f"- {line}", font=font_small, fill="black", anchor="la")
 
     output_path = "סילבוס_ממולא.png"
     image.save(output_path)
@@ -78,16 +85,24 @@ def generate_syllabus_image(course_name, teacher, hours_per_week, requirements, 
 # תצוגה מקדימה ושמירה
 if submitted:
     if course_name and teacher and divisions:
-        img_path = generate_syllabus_image(course_name, teacher, hours_per_week, requirements, summary, equipment)
-
-        st.success("הסילבוס נוצר בהצלחה!")
-        st.image(img_path, caption="תצוגה מקדימה של הסילבוס", use_column_width=True)
-
-        with open("סילבוס_ממולא.png", "rb") as file:
-            st.download_button("📥 הורד סילבוס", file, file_name="סילבוס_ממולא.png")
-
-        # שמירה לקובץ CSV
         for division in divisions:
+            img_path = generate_syllabus_image(
+                course_name,
+                teacher,
+                hours_per_week,
+                division,
+                domain,
+                requirements.splitlines(),
+                summary,
+                equipment.splitlines()
+            )
+
+            st.success(f"✅ סילבוס נוצר עבור {division}")
+            st.image(img_path, caption="תצוגה מקדימה של הסילבוס", use_container_width=True)
+
+            with open("סילבוס_ממולא.png", "rb") as file:
+                st.download_button("📥 הורד סילבוס", file, file_name=f"סילבוס_{division}.png")
+
             row = pd.DataFrame.from_dict({
                 "שם שיעור": [course_name],
                 "מורה": [teacher],
